@@ -1,3 +1,4 @@
+import copy
 import json
 import logging
 import os
@@ -347,7 +348,11 @@ class Downburst(object):
                 'bind-utils',
             ])
         user_fd = tempfile.NamedTemporaryFile(delete=False, mode='wt')
-        user_str = "#cloud-config\n" + yaml.safe_dump(user_info)
+        cloud_config = {}
+        if isinstance(config.downburst, dict) and config.downburst.get('cloud_config', dict()):
+            cloud_config = copy.deepcopy(config.downburst.get('cloud_config'))
+        deep_merge(cloud_config, user_info)
+        user_str = "#cloud-config\n" + yaml.safe_dump(cloud_config)
         user_fd.write(user_str)
         self.user_path = user_fd.name
         return True

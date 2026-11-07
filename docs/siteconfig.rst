@@ -284,6 +284,17 @@ Here is a sample configuration with many of the options set and documented::
                 baseurl: "http://dl.rockylinux.org/$contentdir/$releasever/AppStream/$basearch/os/"
                 enabled: True
                 gpgcheck: False
+      # Extra cloud-init settings (cloud-config)
+      cloud_config:
+        write_files:
+          - path: /etc/environment
+            owner: root:root
+            permissions: '0644'
+            append: true
+            content: |
+              http_proxy=http://proxy.example.com:3128
+              https_proxy=http://proxy.example.com:3128
+              no_proxy=localhost,127.0.0.1,.example.com
       machine:
       - type: vps
         cpus: 2
