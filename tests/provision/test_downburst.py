@@ -133,7 +133,7 @@ OS_VERSIONS = [
 class TestDownburstDistroRepos(object):
     """
     build_config() turns the downburst 'distro' site config into
-    cloud-init 'yum_repos' and a runcmd that disables the image's
+    cloud-init 'yum_repos' and a bootcmd that disables the image's
     default repos.
     """
     status = dict(
@@ -164,7 +164,12 @@ class TestDownburstDistroRepos(object):
     def default_repos_disabled(info, os_type='rocky'):
         cmds = provision.downburst.get_disable_default_repos_cmds(os_type)
         assert cmds
-        return all(cmd in info['runcmd'] for cmd in cmds)
+        # each command runs once, under its own cloud-init-per name
+        entries = [entry.split(' ', 3) for entry in info.get('bootcmd', [])
+                   if entry.startswith('cloud-init-per instance ')]
+        names = [entry[2] for entry in entries]
+        assert len(names) == len(set(names))
+        return [entry[3] for entry in entries] == cmds
 
     @pytest.mark.parametrize('downburst_conf', [
         {'machine': MACHINE},
@@ -261,7 +266,7 @@ class TestDownburstDistroRepos(object):
             'ubuntu': {'repo': {'ubuntu': [BASEOS_REPO]}},
         }}, os_type='ubuntu', os_version='22.04')
         assert 'yum_repos' not in info
-        assert not any('sed -i' in str(c) for c in info['runcmd'])
+        assert 'bootcmd' not in info
 
     def test_os_type_is_case_insensitive(self):
         info = self.user_info({'machine': MACHINE, 'distro': {

@@ -307,8 +307,13 @@ class Downburst(object):
             if yum_repos:
                 user_info['yum_repos'] = yum_repos
             if disable_repos:
-                user_info['runcmd'].extend(
-                    get_disable_default_repos_cmds(os_type))
+                # bootcmd runs before the packages are installed, and
+                # cloud-init-per makes it run only on the first boot,
+                # so repos changed later by a test are kept on reboot
+                user_info.setdefault('bootcmd', []).extend(
+                    f'cloud-init-per instance disable-default-repos-{i} {cmd}'
+                    for i, cmd in enumerate(
+                        get_disable_default_repos_cmds(os_type)))
         # for opensuse-15.2 we need to replace systemd-logger with rsyslog for teuthology
         if os_type == 'opensuse' and os_version == '15.2':
             user_info['runcmd'].extend([
